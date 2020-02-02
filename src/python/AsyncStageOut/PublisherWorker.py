@@ -101,7 +101,7 @@ class PublisherWorker:
         self.cleanEnvironment = 'unset LD_LIBRARY_PATH; unset X509_USER_CERT; unset X509_USER_KEY;'
         self.logger.debug("Trying to get DN %s" % self.user)
         try:
-            self.userDN = getDNFromUserName(self.user, self.logger, ckey=self.config.opsProxy, cert=self.config.opsProxy)
+            self.userDN = getDNFromUserName(self.user, self.logger, ckey=slef.config.opsKey, cert=slef.config.opsCert)
         except Exception as ex:
             msg = "Error retrieving the user DN"
             msg += str(ex)
@@ -169,22 +169,24 @@ class PublisherWorker:
             msg += str(traceback.format_exc())
             self.logger.error(msg)
         if valid:
-            self.userProxy = proxy
+            self.userCert= proxy
+            self.userKey = proxy
         else:
             # Use the operator's proxy when the user proxy in invalid.
             # This will be moved soon
             self.logger.error('Did not get valid proxy. Setting proxy to ops proxy')
-            self.userProxy = self.config.opsProxy
+            self.userCert = self.config.opsCert
+            self.userKey  = self.config.opsKey
         # self.cache_area = self.config.cache_area
         if os.getenv("TEST_ASO"):
             self.db = None
         try:
             self.oracleDB = HTTPRequests(self.config.oracleDB,
-                                         self.config.opsProxy,
-                                         self.config.opsProxy)
+                                         slef.config.opsCert,
+                                         slef.config.opsKey)
             self.oracleDB_user = HTTPRequests(self.config.oracleDB,
-                                         self.userProxy,
-                                         self.userProxy)
+                                         self.userCert,
+                                         self.userKey)
         except:
             self.logger.exception('Failed to contact Oracle')
         self.phedexApi = PhEDEx(responseType='json')
@@ -395,8 +397,8 @@ class PublisherWorker:
                                                       data,
                                                       header,
                                                       doseq=True,
-                                                      ckey=self.userProxy,
-                                                      cert=self.userProxy
+                                                      ckey=self.userKey,
+                                                      cert=self.userCert
                                                      )# , verbose=True) #  for debug
                 except Exception as ex:
                     if self.config.isOracle:
@@ -423,8 +425,8 @@ class PublisherWorker:
                                                               data,
                                                               header,
                                                               doseq=True,
-                                                              ckey=self.userProxy,
-                                                              cert=self.userProxy
+                                                              ckey=self.userKey,
+                                                              cert=self.userCert
                                                          )#, verbose=True)# for debug
                         except Exception as ex:
                             msg = "Error retrieving status from user cache area."
@@ -867,7 +869,7 @@ class PublisherWorker:
         msg = "Retrieving data from %s" % (url)
         self.logger.info(wfnamemsg+msg)
         try:
-            _, res_ = self.connection.request(url, data, header, doseq=True, ckey=self.userProxy, cert=self.userProxy)#, verbose=True)# for debug
+            _, res_ = self.connection.request(url, data, header, doseq=True, ckey=self.userKey, cert=self.userCert)#, verbose=True)# for debug
         except Exception as ex:
             msg = "Error retrieving data."
             msg += str(ex)
